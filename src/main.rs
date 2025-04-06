@@ -49,6 +49,7 @@ fn main() {
         .add_systems(Update, click_start_drag_system)
         .add_systems(Update, click_end_drag_system)
         .add_systems(Update, animate_sprite)
+        .add_systems(Update, apply_drag_impulse_system)
         .run();
 }
 

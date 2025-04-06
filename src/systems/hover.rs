@@ -84,7 +84,6 @@ pub fn click_start_drag_system(
                 if query.get(*entity).is_ok() {
                     drag_state.active_entity = Some(*entity);
                     drag_state.drag_start = Some(cursor_pos);
-                    println!("Started drag on {:?} at {:?}", entity, cursor_pos);
                 }
             }
         }
@@ -105,7 +104,6 @@ pub fn click_end_drag_system(
         ) {
             if let Some(end_pos) = cursor_world_position(windows, camera_q) {
                 let delta = end_pos - start_pos;
-                println!("Ended drag on {:?} | Δ: {:?}", entity, delta);
                 drag_ended_writer.send(DragEndedEvent {
                     entity,
                     start: start_pos,

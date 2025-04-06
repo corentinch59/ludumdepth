@@ -165,3 +165,16 @@ pub fn update_ball_shadow(
     let ball_transform = ball.single();
     shadow_transform.translation = ball_transform.translation;
 }
+
+pub fn apply_drag_impulse_system(
+    mut impulses: Query<&mut ExternalImpulse>,
+    mut events: EventReader<DragEndedEvent>,
+) {
+    for event in events.read() {
+        if let Ok(mut impulse) = impulses.get_mut(event.entity) {
+            // L'impulsion est proportionnelle à la distance (delta) du drag
+            impulse.impulse = -event.delta * 1500000.0; // Ajuste le facteur selon le feeling
+            println!("Impulse applied to {:?}: {:?}", event.entity, impulse.impulse);
+        }
+    }
+}
