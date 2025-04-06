@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::hover::Hoverable;
+use crate::hover::*;
+
 macro_rules! vec2 { ($x:expr, $y:expr) => { Vec2 { x: $x, y: $y } }; }
 
 #[derive(Component)]
@@ -13,10 +14,24 @@ pub struct BallShadow;
 #[derive(Component)]
 pub struct Ball;
 
+#[derive(Component)]
+pub struct AnimationIndices {
+    first: usize,
+    last: usize,
+}
+
+#[derive(Component, Deref, DerefMut)]
+pub struct AnimationTimer(Timer);
+
+pub struct AnimatedSprite {
+    frames: Vec<Handle<Image>>,
+    current_frame: usize,
+}
+
 const AVATAR_RATIO: f32 = 496.0 / 848.0;
 const AVATAR_SIZE: f32 = 350.0;
 
-pub fn setup_player(mut commands: Commands, asset_server: Res<AssetServer>)
+pub fn setup_player(mut commands: Commands, asset_server: Res<AssetServer>, mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>)
 {
     let rope = RopeJointBuilder::new(150.0)
         .local_anchor1(vec2!(0.0, 25.0))
@@ -37,6 +52,7 @@ pub fn setup_player(mut commands: Commands, asset_server: Res<AssetServer>)
         .insert(ExternalForce::default())
         .insert(ExternalImpulse::default())
         .insert(Hoverable)
+        .insert(Draggable)
         .insert(Damping {
             linear_damping: 0.5,
             angular_damping: 1.0,
@@ -53,6 +69,19 @@ pub fn setup_player(mut commands: Commands, asset_server: Res<AssetServer>)
             ..default()
         })
         .insert(BallShadow);
+
+    let texture = asset_server.load("textures/player.png");
+    let layout = TextureAtlasLayout::from_grid(UVec2::splat(24), 5, 1, None, None);
+    let texture_atlas_layout = texture_atlas_layouts.add(layout);
+
+    let mut player_sprite = Sprite::from_atlas_image(
+        texture,
+        TextureAtlas {
+            layout: texture_atlas_layout,
+            index: 0,
+        },
+    );
+    player_sprite.custom_size = Some(vec2!(AVATAR_SIZE * AVATAR_RATIO, AVATAR_SIZE));
 
     commands
         .spawn(RigidBody::Dynamic)
@@ -71,13 +100,10 @@ pub fn setup_player(mut commands: Commands, asset_server: Res<AssetServer>)
             linvel: vec2!(0.0, 0.0),
             angvel: 0.0
         })
-        .insert(Sprite { 
-            image: asset_server.load("textures/bonhomme.png"),
-            custom_size: Some(vec2!(AVATAR_SIZE * AVATAR_RATIO, AVATAR_SIZE)),
-            ..default()
-        })
+        .insert(player_sprite)
+        .insert(AnimationIndices { first: 1, last: 2 })
+        .insert(AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)))
         .insert(Transform::from_xyz(100.0, 200.0, 0.0));
-
 }
 
 
@@ -109,6 +135,24 @@ pub fn player_movement(
             let target_rotation = Quat::from_rotation_z(target_angle);
             let rotation_speed = 5.0;
             transform.rotation = transform.rotation.slerp(target_rotation, rotation_speed * time.delta_secs());
+        }
+    }
+}
+pub fn animate_sprite(
+    time: Res<Time>,
+    mut query: Query<(&AnimationIndices, &mut AnimationTimer, &mut Sprite)>,
+) {
+    for (indices, mut timer, mut sprite) in &mut query {
+        timer.tick(time.delta());
+
+        if timer.just_finished() {
+            if let Some(atlas) = &mut sprite.texture_atlas {
+                atlas.index = if atlas.index == indices.last {
+                    indices.first
+                } else {
+                    atlas.index + 1
+                };
+            }
         }
     }
 }
