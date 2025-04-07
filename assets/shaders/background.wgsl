@@ -38,8 +38,9 @@ fn vertex(input: Vertex) -> VertexOutput {
 fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     // return material_color * textureSample(base_color_texture, base_color_sampler, mesh.uv) * 1.0;
     var t = globals.time * 0.5;
-    var noise2 = simplex_noise_2d(mesh.uv * 5.0 * vec2(view.viewport.z / view.viewport.w, 5.0) + vec2(sin(t) * 0.5, -t)) / 2.0 + 0.5;
-    var noise1 = simplex_noise_2d(mesh.uv * 5.0 * vec2(view.viewport.z / view.viewport.w, 5.0) + vec2(sin(t) * 0.5, t)) / 2.0 + 0.5;
-    var light = noise1 * 0.3 + 0.25 + noise2 * 0.20;
-    return vec4(vec3(floor(light * 8.0) / 8.0), 1.0);
+    var noise2 = simplex_noise_2d(mesh.uv * 2.5 * vec2(view.viewport.z / view.viewport.w, 5.0) + vec2(sin(t) * 0.5, -t)) / 2.0 + 0.5;
+    var noise1 = simplex_noise_2d(mesh.uv * 2.5 * vec2(view.viewport.z / view.viewport.w, 5.0) + vec2(sin(t) * 0.5, t)) / 2.0 + 0.5;
+    var noise3 = simplex_noise_2d(mesh.uv * 20.0 * vec2(view.viewport.z / view.viewport.w, 5.0) + vec2(sin(t * 2.0) * 0.5, t * 2.0)) / 2.0 + 0.5;
+    var light = noise1 * 0.3 + 0.25 + noise2 * 0.20 + noise3 * 0.1;
+    return vec4(vec3(floor(light * 8.0) / 8.0) * (1.0 - mesh.uv.y), 1.0);
 }
