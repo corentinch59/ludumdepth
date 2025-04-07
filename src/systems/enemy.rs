@@ -43,6 +43,7 @@ pub fn spawn_playerFish(mut commands: Commands, asset_server: Res<AssetServer>, 
         .insert(PlayerFish)
         .insert(Velocity::default())
         .insert(Collider::capsule(vec2!(0.0, 0.0), vec2!(0.0, 30.0), 30.0))
+        .insert(ActiveEvents::COLLISION_EVENTS)
         .insert(Transform::from_xyz(300.0, 200.0, 0.0))
         .insert(ExternalForce::default())
         .insert(ExternalImpulse::default())
@@ -62,8 +63,6 @@ pub fn spawn_playerFish(mut commands: Commands, asset_server: Res<AssetServer>, 
         
 }
 
-
-
 pub fn fish_follow_player_system(
     player_query: Query<&Transform, With<Player>>,
     mut enemy_query: Query<(&mut Transform, &mut ExternalForce), (With<PlayerFish>, Without<Player>)>,
@@ -81,7 +80,6 @@ pub fn fish_follow_player_system(
             let rotation_speed = 5.0;
             enemy_transform.rotation = enemy_transform.rotation.slerp(target_rotation, rotation_speed * time.delta_secs());
 
-            // Ajuste la force appliquée selon le feeling désiré
             let strength = 200_000.0;
             force.force = direction * strength;
         }
@@ -105,9 +103,50 @@ pub fn fish_follow_ball_system(
             let rotation_speed = 5.0;
             fish_transform.rotation = fish_transform.rotation.slerp(target_rotation, rotation_speed * time.delta_secs());
 
-            // Ajuste la force appliquée selon le feeling désiré
             let strength = 200_000.0;
             force.force = direction * strength;
+        }
+    }
+}
+
+pub fn detect_playerfish_collision_system(
+    mut collision_events: EventReader<CollisionEvent>,
+    fish_query: Query<Entity, With<PlayerFish>>,
+    player_query: Query<Entity, With<Player>>,
+) {
+    for event in collision_events.read() {
+        match event {
+            CollisionEvent::Started(e1, e2, _flags) => {
+                let is_fish = fish_query.get(*e1).is_ok() || fish_query.get(*e2).is_ok();
+                let is_player = player_query.get(*e1).is_ok() || player_query.get(*e2).is_ok();
+
+                if is_fish && is_player {
+                    println!("💥 PlayerFish and Player just collided!");
+                    // ici tu peux déclencher une action (dégâts, repoussement, etc.)
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+pub fn detect_ballfish_collision_system(
+    mut collision_events: EventReader<CollisionEvent>,
+    fish_query: Query<Entity, With<BallFish>>,
+    ball: Query<Entity, With<Ball>>,
+) {
+    for event in collision_events.read() {
+        match event {
+            CollisionEvent::Started(e1, e2, _flags) => {
+                let is_fish = fish_query.get(*e1).is_ok() || fish_query.get(*e2).is_ok();
+                let is_ball = ball.get(*e1).is_ok() || ball.get(*e2).is_ok();
+
+                if is_fish && is_ball {
+                    println!("💥 BallFish and Ball just collided!");
+                    // ici tu peux déclencher une action (dégâts, repoussement, etc.)
+                }
+            }
+            _ => {}
         }
     }
 }
