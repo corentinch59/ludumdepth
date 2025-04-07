@@ -58,6 +58,7 @@ pub fn spawn_playerFish(mut commands: Commands, asset_server: Res<AssetServer>, 
                     current: FishAnimation::Idle,
                     clips: clips,
                 })
+                .insert(AnimationTimer(Timer::from_seconds(0.6, TimerMode::Repeating)))
                 .insert(Transform::from_xyz(0.0, 0.0, 0.0).with_rotation(Quat::from_euler(EulerRot::XYZ, 0.0, 0.0, -3.1415926 / 2.0)));
         });
         
