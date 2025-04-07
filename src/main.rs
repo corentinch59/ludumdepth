@@ -57,6 +57,7 @@ fn main() {
         .add_systems(Update, apply_drag_impulse_system)
         .add_systems(Update, fish_follow_player_system)
         .add_systems(Update, fish_follow_ball_system)
+        .add_systems(Update, detect_playerfish_collision_system)
         .run();
 }
 
