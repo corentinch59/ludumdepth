@@ -43,7 +43,7 @@ pub fn setup_player(mut commands: Commands, asset_server: Res<AssetServer>, mut 
         })
         .insert(Collider::ball(25.0))
         .insert(GravityScale(10.0))
-        .insert(AdditionalMassProperties::Mass(1000000.0))
+        .insert(AdditionalMassProperties::Mass(1_000_000.0))
         .insert(Transform::from_xyz(10.0, 400.0, 0.0))
         .insert(ExternalForce::default())
         .insert(ExternalImpulse::default())
@@ -132,7 +132,7 @@ pub fn player_movement(
             direction.y -= 1.0;
         }
 
-        impulse.impulse = direction * 20000.0;
+        impulse.impulse = direction * 20_000.0;
 
         if direction.length() > 0.1 {
             manager.current = PlayerAnimation::Swiming;
@@ -158,14 +158,26 @@ pub fn update_ball_shadow(
 }
 
 pub fn apply_drag_impulse_system(
-    mut impulses: Query<&mut ExternalImpulse>,
+    mut impulses: Query<(&mut ExternalImpulse, &Velocity)>,
     mut events: EventReader<DragEndedEvent>,
 ) {
     for event in events.read() {
-        if let Ok(mut impulse) = impulses.get_mut(event.entity) {
-            // L'impulsion est proportionnelle à la distance (delta) du drag
-            impulse.impulse = -event.delta * 1500000.0; // Ajuste le facteur selon le feeling
-            println!("Impulse applied to {:?}: {:?}", event.entity, impulse.impulse);
+        if let Ok((mut impulse, velocity)) = impulses.get_mut(event.entity) {
+            if velocity.linvel.length_squared() < 60.0 {
+                let force = -event.delta * 1_500_000.0;
+                impulse.impulse = force;
+
+                println!(
+                    "Impulse applied to {:?}: {:?}",
+                    event.entity, impulse.impulse
+                );
+            } else {
+                println!(
+                    "Skipping impulse on {:?}, velocity not near zero: {:?}",
+                    event.entity, velocity.linvel
+                );
+            }
         }
     }
 }
+

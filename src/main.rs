@@ -3,6 +3,7 @@
 #[path = "systems/hover.rs"] mod hover;
 #[path = "systems/ui.rs"] mod ui;
 #[path = "systems/scene.rs"] mod scene;
+#[path = "systems/enemy.rs"] mod enemy;
 
 use bevy::prelude::*;
 // use bevy_tweening::TweeningPlugin;
@@ -12,6 +13,7 @@ use animation::*;
 use ui::*;
 use scene::*;
 use hover::*;
+use enemy::*;
 
 fn main() {
     let default = DefaultPlugins
@@ -45,6 +47,7 @@ fn main() {
         .add_systems(Startup, setup_scene)
         .add_systems(Startup, setup_ui)
         .add_systems(Startup, setup_player)
+        .add_systems(Startup, spawn_enemy)
         .add_systems(Update, player_movement)
         .add_systems(Update, update_ball_shadow)
         .add_systems(Update, check_hover_system)
@@ -52,6 +55,7 @@ fn main() {
         .add_systems(Update, click_end_drag_system)
         .add_systems(Update, animate_sprite::<PlayerAnimation>)
         .add_systems(Update, apply_drag_impulse_system)
+        .add_systems(Update, enemy_follow_player_system)
         .run();
 }
 
