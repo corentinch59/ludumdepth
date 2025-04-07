@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
-use std::collections::HashMap;
 use crate::hover::*;
+use crate::animation::*;
+use std::collections::HashMap;
 
 macro_rules! vec2 { ($x:expr, $y:expr) => { Vec2 { x: $x, y: $y } }; }
 
@@ -15,25 +16,11 @@ pub struct BallShadow;
 pub struct Ball;
 
 #[derive(Eq, Hash, PartialEq)]
-enum Animation {
+pub enum PlayerAnimation {
     Idle,
     Swiming,
     Trackted,
 }
-
-struct AnimationClip {
-    first: usize,
-    last: usize,
-}
-
-#[derive(Component)]
-pub struct AnimationManager {
-    current: Animation,
-    clips: HashMap<Animation, AnimationClip>,
-}
-
-#[derive(Component, Deref, DerefMut)]
-pub struct AnimationTimer(Timer);
 
 const HEIGHT: u32 = 848;
 const WIDTH: u32 = 496;
@@ -93,9 +80,9 @@ pub fn setup_player(mut commands: Commands, asset_server: Res<AssetServer>, mut 
     player_sprite.custom_size = Some(vec2!(AVATAR_SIZE * AVATAR_RATIO, AVATAR_SIZE));
 
     let mut clips = HashMap::new();
-    clips.insert(Animation::Idle, AnimationClip { first: 0, last: 1 });
-    clips.insert(Animation::Trackted, AnimationClip { first: 2, last: 2 });
-    clips.insert(Animation::Swiming, AnimationClip { first: 3, last: 5 });
+    clips.insert(PlayerAnimation::Idle, AnimationSlice { first: 0, last: 1 });
+    clips.insert(PlayerAnimation::Trackted, AnimationSlice { first: 2, last: 2 });
+    clips.insert(PlayerAnimation::Swiming, AnimationSlice { first: 3, last: 5 });
 
     commands
         .spawn(RigidBody::Dynamic)
@@ -115,23 +102,21 @@ pub fn setup_player(mut commands: Commands, asset_server: Res<AssetServer>, mut 
             angvel: 0.0
         })
         .insert(player_sprite)
-        .insert(AnimationManager {
-            current: Animation::Idle,
+        .insert(Animator {
+            current: PlayerAnimation::Idle,
             clips: clips,
         })
-        .insert(AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)))
+        .insert(AnimationTimer(Timer::from_seconds(0.3, TimerMode::Repeating)))
         .insert(Transform::from_xyz(100.0, 200.0, 0.0));
 }
 
 
 pub fn player_movement(
     keys: Res<ButtonInput<KeyCode>>,
-    mut query: Query<(&mut ExternalForce, &mut ExternalImpulse, &mut Transform, &mut AnimationManager), With<Player>>,
+    mut query: Query<(&mut ExternalForce, &mut ExternalImpulse, &mut Transform, &mut Animator<PlayerAnimation>, &Velocity), With<Player>>,
     time: Res<Time>,
-    ball_query: Query<&Velocity, With<Ball>>,
 ) {
-    let ball = ball_query.single();
-    for (mut _force, mut impulse, mut transform, mut manager) in &mut query {
+    for (mut _force, mut impulse, mut transform, mut manager, velocity) in &mut query {
         let mut direction = Vec2::ZERO;
 
         if keys.pressed(KeyCode::KeyA) {
@@ -150,37 +135,15 @@ pub fn player_movement(
         impulse.impulse = direction * 20000.0;
 
         if direction.length() > 0.1 {
-            manager.current = Animation::Swiming;
+            manager.current = PlayerAnimation::Swiming;
             let target_angle = direction.y.atan2(direction.x) - 3.1415926 / 2.0;
             let target_rotation = Quat::from_rotation_z(target_angle);
             let rotation_speed = 5.0;
             transform.rotation = transform.rotation.slerp(target_rotation, rotation_speed * time.delta_secs());
-        } else if ball.linvel.length() > 0.2 {
-            manager.current = Animation::Trackted;
+        } else if velocity.linvel.length() > 20.0 {
+            manager.current = PlayerAnimation::Trackted;
         } else {
-            manager.current = Animation::Idle;
-        }
-    }
-}
-
-pub fn animate_sprite(
-    time: Res<Time>,
-    mut query: Query<(&AnimationManager, &mut AnimationTimer, &mut Sprite)>,
-) {
-    for (manager, mut timer, mut sprite) in &mut query {
-        timer.tick(time.delta());
-
-        if timer.just_finished() {
-            if let Some(atlas) = &mut sprite.texture_atlas {
-                if let Some(indices) = manager.clips.get(&manager.current) {
-                    atlas.index = if atlas.index < indices.first || atlas.index >= indices.last {
-                        indices.first
-                    } else {
-                        atlas.index + 1
-                    };
-                }
-
-            }
+            manager.current = PlayerAnimation::Idle;
         }
     }
 }

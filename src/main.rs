@@ -1,4 +1,5 @@
 #[path = "systems/player.rs"] mod player;
+#[path = "systems/animation.rs"] mod animation;
 #[path = "systems/hover.rs"] mod hover;
 #[path = "systems/ui.rs"] mod ui;
 #[path = "systems/scene.rs"] mod scene;
@@ -7,6 +8,7 @@ use bevy::prelude::*;
 // use bevy_tweening::TweeningPlugin;
 use bevy_rapier2d::prelude::*;
 use player::*;
+use animation::*;
 use ui::*;
 use scene::*;
 use hover::*;
@@ -48,7 +50,7 @@ fn main() {
         .add_systems(Update, check_hover_system)
         .add_systems(Update, click_start_drag_system)
         .add_systems(Update, click_end_drag_system)
-        .add_systems(Update, animate_sprite)
+        .add_systems(Update, animate_sprite::<PlayerAnimation>)
         .add_systems(Update, apply_drag_impulse_system)
         .run();
 }
