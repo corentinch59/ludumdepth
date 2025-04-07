@@ -47,7 +47,7 @@ fn main() {
         .add_systems(Startup, setup_scene)
         .add_systems(Startup, setup_ui)
         .add_systems(Startup, setup_player)
-        .add_systems(Startup, spawn_enemy)
+        .add_systems(Startup, spawn_playerFish)
         .add_systems(Update, player_movement)
         .add_systems(Update, update_ball_shadow)
         .add_systems(Update, check_hover_system)
@@ -55,7 +55,8 @@ fn main() {
         .add_systems(Update, click_end_drag_system)
         .add_systems(Update, animate_sprite::<PlayerAnimation>)
         .add_systems(Update, apply_drag_impulse_system)
-        .add_systems(Update, enemy_follow_player_system)
+        .add_systems(Update, fish_follow_player_system)
+        .add_systems(Update, fish_follow_ball_system)
         .run();
 }
 
