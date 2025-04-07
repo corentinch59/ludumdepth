@@ -14,6 +14,8 @@ use ui::*;
 use scene::*;
 use hover::*;
 use enemy::*;
+use bevy::sprite::{Material2d, Material2dPlugin};
+use noisy_bevy::NoisyShaderPlugin;
 
 fn main() {
     let default = DefaultPlugins
@@ -42,8 +44,10 @@ fn main() {
         .add_event::<DragEndedEvent>()
         // .add_plugins(TweeningPlugin)
         .add_plugins(default)
+        .add_plugins(Material2dPlugin::<CustomMaterial>::default())
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(RapierDebugRenderPlugin::default())
+        .add_plugins(NoisyShaderPlugin)
         .add_systems(Startup, setup_scene)
         .add_systems(Startup, setup_ui)
         .add_systems(Startup, setup_player)
