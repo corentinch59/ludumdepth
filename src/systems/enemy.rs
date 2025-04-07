@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
+use std::collections::HashMap;
 
 use crate::player::*;
+use crate::animation::*;
 
 macro_rules! vec2 { ($x:expr, $y:expr) => { Vec2 { x: $x, y: $y } }; }
 
@@ -11,8 +13,31 @@ pub struct PlayerFish;
 #[derive(Component)]
 pub struct BallFish;
 
-pub fn spawn_playerFish(mut commands: Commands)
+#[derive(Eq, Hash, PartialEq)]
+pub enum FishAnimation {
+    Idle,
+    Attack,
+}
+
+pub fn spawn_playerFish(mut commands: Commands, asset_server: Res<AssetServer>, mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>)
 {
+
+    let texture = asset_server.load("textures/fish_1.png");
+    let layout = TextureAtlasLayout::from_grid(UVec2 { x: 346, y: 262 }, 5, 2, None, None);
+    let texture_atlas_layout = texture_atlas_layouts.add(layout);
+
+    let mut sprite = Sprite::from_atlas_image(
+        texture,
+        TextureAtlas {
+            layout: texture_atlas_layout,
+            index: 1,
+        },
+    );
+    sprite.custom_size = Some(vec2!((150.0) * (346.0 / 262.0), 150.0));
+    let mut clips = HashMap::new();
+    clips.insert(FishAnimation::Idle, AnimationSlice { first: 0, last: 1 });
+    clips.insert(FishAnimation::Attack, AnimationSlice { first: 2, last: 2 });
+
     commands
         .spawn(RigidBody::Dynamic)
         .insert(PlayerFish)
@@ -24,7 +49,17 @@ pub fn spawn_playerFish(mut commands: Commands)
         .insert(Damping {
             linear_damping: 3.0,
             angular_damping: 1.0,
+        })
+        .with_children(|parent| {
+            parent
+                .spawn(sprite)
+                .insert(Animator {
+                    current: FishAnimation::Idle,
+                    clips: clips,
+                })
+                .insert(Transform::from_xyz(0.0, 0.0, 0.0).with_rotation(Quat::from_euler(EulerRot::XYZ, 0.0, 0.0, -3.1415926 / 2.0)));
         });
+        
 }
 
 

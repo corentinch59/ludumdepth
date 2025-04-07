@@ -2,9 +2,10 @@ from PIL import Image
 
 # SPLIT GIFS
 
-gif_paths = [ "./assets/raw/player.gif" ]
+gif_paths = [ "player.gif", "fish_1.gif" ]
 
 for gif_path in gif_paths:
+    gif_path = f"./assets/raw/{gif_path}"
     name = gif_path.split("/")[-1][:-4]
     out = f"./assets/textures/{name}.png"
     gif = Image.open(gif_path)

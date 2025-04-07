@@ -54,6 +54,7 @@ fn main() {
         .add_systems(Update, click_start_drag_system)
         .add_systems(Update, click_end_drag_system)
         .add_systems(Update, animate_sprite::<PlayerAnimation>)
+        .add_systems(Update, animate_sprite::<FishAnimation>)
         .add_systems(Update, apply_drag_impulse_system)
         .add_systems(Update, fish_follow_player_system)
         .add_systems(Update, fish_follow_ball_system)
