@@ -5,11 +5,14 @@ import subprocess
 out_dir = './out'
 if os.path.exists(out_dir): shutil.rmtree(out_dir)
 
+subprocess.run(['cargo', 'build', '--release', '--target', 'wasm32-unknown-unknown'], check=True)
+subprocess.run(['cargo', 'build', '--release'], check=True)
+
 wasm_bindgen_cmd = [
     'wasm-bindgen',
     '--no-typescript',
     '--target', 'web',
-    '--out-dir', './out/',
+    '--out-dir', './out/web/',
     '--out-name', 'DepthLudum',
     './target/wasm32-unknown-unknown/release/DepthLudum.wasm'
 ]
@@ -17,9 +20,11 @@ wasm_bindgen_cmd = [
 subprocess.run(wasm_bindgen_cmd, check=True)
 
 assets_src = 'assets'
-assets_dest = os.path.join(out_dir, 'assets')
-shutil.copytree(assets_src, assets_dest)
-shutil.rmtree('out/assets/raw')
+shutil.copytree(assets_src, os.path.join(out_dir, 'web/assets'))
+shutil.copytree(assets_src, os.path.join(out_dir, 'win/assets'))
+shutil.copy('./target/release/DepthLudum.exe', './out/web/DepthLudum.exe')
+shutil.rmtree('out/web/assets/raw')
+shutil.rmtree('out/win/assets/raw')
 
 html_content = """
 <!doctype html>

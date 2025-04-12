@@ -23,8 +23,6 @@ pub struct DragState {
 #[derive(Event)]
 pub struct DragEndedEvent {
     pub entity: Entity,
-    pub start: Vec2,
-    pub end: Vec2,
     pub delta: Vec2,
 }
 
@@ -45,26 +43,22 @@ fn cursor_world_position(
 pub fn check_hover_system(
     windows: Query<&Window>,
     camera_q: Query<(&Camera, &GlobalTransform)>,
-    cursor_pos: Res<ButtonInput<MouseButton>>,
     mut events: EventWriter<HoveredEvent>,
     query: Query<(&GlobalTransform, &Sprite, Entity), With<Hoverable>>,
 ) {
-    if let Some(cursor_world) = cursor_world_position(windows, camera_q) {
-        for (transform, sprite, entity) in &query {
-            let scale = transform.scale().truncate();
-            let size = sprite.custom_size.unwrap_or(Vec2::ONE) * scale;
-            let position = transform.translation().truncate();
+    let Some(cursor_world) = cursor_world_position(windows, camera_q) else { return };
+    for (transform, sprite, entity) in &query {
+        let scale = transform.scale().truncate();
+        let size = sprite.custom_size.unwrap_or(Vec2::ONE) * scale;
+        let position = transform.translation().truncate();
 
-            let half_size = size / 2.0;
-            let min = position - half_size;
-            let max = position + half_size;
+        let half_size = size / 2.0;
+        let min = position - half_size;
+        let max = position + half_size;
 
-            if (min.x..=max.x).contains(&cursor_world.x)
-                && (min.y..=max.y).contains(&cursor_world.y)
-            {
-                events.send(HoveredEvent { entity });
-            }
-        }
+        let skip = !(min.x..=max.x).contains(&cursor_world.x) || !(min.y..=max.y).contains(&cursor_world.y);
+        if skip { continue }
+        events.send(HoveredEvent { entity });
     }
 }
 
@@ -78,15 +72,12 @@ pub fn click_start_drag_system(
     windows: Query<&Window>,
     query: Query<Entity, With<Draggable>>,
 ) {
-    if buttons.just_pressed(MouseButton::Left) {
-        if let Some(cursor_pos) = cursor_world_position(windows, camera_q) {
-            for HoveredEvent { entity } in events.read() {
-                if query.get(*entity).is_ok() {
-                    drag_state.active_entity = Some(*entity);
-                    drag_state.drag_start = Some(cursor_pos);
-                }
-            }
-        }
+    if !buttons.just_pressed(MouseButton::Left) { return }
+    let Some(cursor_pos) = cursor_world_position(windows, camera_q) else { return };
+    for HoveredEvent { entity } in events.read() {
+        if !query.get(*entity).is_ok() { continue }
+        drag_state.active_entity = Some(*entity);
+        drag_state.drag_start = Some(cursor_pos);
     }
 }
 
@@ -97,20 +88,10 @@ pub fn click_end_drag_system(
     mut drag_state: ResMut<DragState>,
     mut drag_ended_writer: EventWriter<DragEndedEvent>,
 ) {
-    if buttons.just_released(MouseButton::Left) {
-        if let (Some(entity), Some(start_pos)) = (
-            drag_state.active_entity.take(),
-            drag_state.drag_start.take(),
-        ) {
-            if let Some(end_pos) = cursor_world_position(windows, camera_q) {
-                let delta = end_pos - start_pos;
-                drag_ended_writer.send(DragEndedEvent {
-                    entity,
-                    start: start_pos,
-                    end: end_pos,
-                    delta,
-                });
-            }
-        }
-    }
+    if !buttons.just_released(MouseButton::Left) { return }
+    let Some(entity) = drag_state.active_entity.take() else { return };
+    let Some(start_pos) = drag_state.drag_start.take() else { return };
+    let Some(end_pos) = cursor_world_position(windows, camera_q) else { return };
+    let delta = end_pos - start_pos;
+    drag_ended_writer.send(DragEndedEvent { entity, delta });
 }

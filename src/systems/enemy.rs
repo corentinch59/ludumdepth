@@ -19,7 +19,7 @@ pub enum FishAnimation {
     Attack,
 }
 
-pub fn spawn_playerFish(mut commands: Commands, asset_server: Res<AssetServer>, mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>)
+pub fn spawn_player_fish(mut commands: Commands, asset_server: Res<AssetServer>, mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>)
 {
 
     let texture = asset_server.load("textures/fish_1.png");
@@ -40,6 +40,10 @@ pub fn spawn_playerFish(mut commands: Commands, asset_server: Res<AssetServer>, 
 
     commands
         .spawn(RigidBody::Dynamic)
+        .insert(CollisionGroups::new(
+            Group::GROUP_2,
+            Group::GROUP_1 | Group::GROUP_2 | Group::GROUP_4,
+        ))
         .insert(PlayerFish)
         .insert(Velocity::default())
         .insert(Collider::capsule(vec2!(0.0, 0.0), vec2!(0.0, 30.0), 30.0))
@@ -56,9 +60,9 @@ pub fn spawn_playerFish(mut commands: Commands, asset_server: Res<AssetServer>, 
                 .spawn(sprite)
                 .insert(Animator {
                     current: FishAnimation::Idle,
+                    timer: Timer::from_seconds(0.6, TimerMode::Repeating),
                     clips: clips,
                 })
-                .insert(AnimationTimer(Timer::from_seconds(0.6, TimerMode::Repeating)))
                 .insert(Transform::from_xyz(0.0, 0.0, 0.0).with_rotation(Quat::from_euler(EulerRot::XYZ, 0.0, 0.0, -3.1415926 / 2.0)));
         });
         
